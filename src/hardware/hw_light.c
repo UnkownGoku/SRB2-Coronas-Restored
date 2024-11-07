@@ -19,7 +19,6 @@
 
 #include "../doomdef.h"
 
-#ifdef HWRENDER
 #include "hw_light.h"
 #include "hw_drv.h"
 #include "../i_video.h"
@@ -224,7 +223,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],     // SPR_MSCB
 
 	// Collectible Items
-	&lspr[NOLIGHT],     // SPR_RING
+	&lspr[RINGLIGHT_L],     // SPR_RING
 	&lspr[NOLIGHT],     // SPR_TRNG
 	&lspr[NOLIGHT],     // SPR_EMMY
 	&lspr[BLUEBALL_L],     // SPR_TOKE
@@ -233,7 +232,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],     // SPR_NWNG
 	&lspr[NOLIGHT],     // SPR_EMBM
 	&lspr[NOLIGHT],     // SPR_CEMG
-	&lspr[NOLIGHT],     // SPR_EMER
+	&lspr[WHITESHIELD_L],     // SPR_EMER
 
 	// Interactive Objects
 	&lspr[NOLIGHT],     // SPR_FANS
@@ -348,14 +347,14 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],     // SPR_RCRY
 
 	// Powerup Indicators
-	&lspr[NOLIGHT],     // SPR_ARMA
+	&lspr[REDSHIELD_L],     // SPR_ARMA
 	&lspr[NOLIGHT],     // SPR_ARMF
 	&lspr[NOLIGHT],     // SPR_ARMB
-	&lspr[NOLIGHT],     // SPR_WIND
-	&lspr[NOLIGHT],     // SPR_MAGN
-	&lspr[NOLIGHT],     // SPR_ELEM
-	&lspr[NOLIGHT],     // SPR_FORC
-	&lspr[NOLIGHT],     // SPR_PITY
+	&lspr[WHITESHIELD_L],     // SPR_WIND
+	&lspr[YELLOWSHIELD_L],     // SPR_MAGN
+	&lspr[GREENSHIELD_L],     // SPR_ELEM
+	&lspr[BLUESHIELD_L],     // SPR_FORC
+	&lspr[GREENSHIELD_L],     // SPR_PITY
 	&lspr[INVINCIBLE_L],     // SPR_IVSP
 	&lspr[SUPERSPARK_L],     // SPR_SSPK
 
@@ -825,6 +824,10 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 #ifdef DL_HIGH_QUALITY
 		Surf.FlatColor.s.alpha = (unsigned char)((1 - dist_p2d/DL_SQRRADIUS(j))*Surf.FlatColor.s.alpha);
 #endif
+#ifdef CONGLOMERATE
+        if (P_MobjWasRemoved(dynlights->mo[j]))
+            return;
+#endif
 		if (!dynlights->mo[j]->state)
 			return;
 		// next state is null so fade out with alpha
@@ -928,7 +931,10 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gr_vissprite_t *spr)
 
 		HWR_GetPic(coronalumpnum);  /// \todo use different coronas
 
-		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_Corona | PF_NoDepthTest);
+	    if (spr->mobj->type == MT_PLAYER)
+	        HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_NoDepthTest);
+            else
+                HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip);			
 	}
 }
 #endif
@@ -1008,7 +1014,10 @@ void HWR_DrawCoronas(void)
 		light[3].y = cy+size*1.33f;
 		light[3].sow = 0.0f;   light[3].tow = 1.0f;
 
-		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_NoDepthTest | PF_Corona);
+	    if (dynlights->mo[j]->type == MT_PLAYER)
+		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_NoDepthTest);
+	    else
+		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip);
 	}
 }
 #endif
@@ -1018,7 +1027,7 @@ void HWR_DrawCoronas(void)
 // --------------------------------------------------------------------------
 void HWR_ResetLights(void)
 {
-	dynlights->nb = 0;
+	memset(dynlights,0,sizeof(dynlights_t));
 }
 
 // --------------------------------------------------------------------------
@@ -1330,4 +1339,3 @@ void HWR_CreateStaticLightmaps(int bspnum)
   - finalement virer le hack splitscreen, il n'est plus necessaire !
 */
 #endif
-#endif // HWRENDER
